@@ -1,20 +1,35 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+
+import BottomTabNavigator from './src/navigation/BottomTabNavigator';
+import PaiementScreen from './src/screens/PaiementScreen';
+import { SessionProvider } from './src/context/SessionProvider';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+    return (
+        <>
+            <StatusBar hidden={true} />
+            <SessionProvider>
+                <NavigationContainer>
+                    <Stack.Navigator>
+                        <Stack.Screen
+                            name="MainTabs"
+                            component={BottomTabNavigator}
+                            options={{ headerShown: false }}
+                        />
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+                        <Stack.Screen
+                            name="PaiementScreen"
+                            component={PaiementScreen}
+                            options={{ title: 'Paiement' }}
+                        />
+                    </Stack.Navigator>
+                </NavigationContainer>
+            </SessionProvider>
+        </>
+    );
+}
