@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
     View,
     Text,
@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {loadAppData, saveAppData} from '../utils/storage';
 import { authenticate } from '../utils/auth';
 import {useIsFocused} from "@react-navigation/native";
+import {SessionContext} from "../context/SessionProvider";
 
 
 export default function MembreScreen() {
@@ -28,11 +29,14 @@ export default function MembreScreen() {
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [newMemberName, setNewMemberName] = useState('');
     const isFocused = useIsFocused();
+    const { addSession, getSession } = useContext(SessionContext);
+
 
 
     const loadData = async () => {
         try {
-            const data = await loadAppData();
+            const currentProjectKey = getSession('currentProjectKey');
+            const data = await loadAppData(currentProjectKey);
             setAppData(data);
         } catch (error) {
             console.error('Erreur de chargement :', error);
@@ -60,7 +64,8 @@ export default function MembreScreen() {
             families: [...appData.families, newFamily],
         };
 
-        await saveAppData(updatedData);
+        const currentProjectKey = getSession('currentProjectKey');
+        await saveAppData(currentProjectKey, updatedData);
         setAppData(updatedData);
         setFamilyName('');
         setFamilyModalVisible(false);
@@ -80,7 +85,8 @@ export default function MembreScreen() {
             members: [...appData.members, newMember],
         };
 
-        await saveAppData(updatedData);
+        const currentProjectKey = getSession('currentProjectKey');
+        await saveAppData(currentProjectKey, updatedData);
         setAppData(updatedData);
         setMemberName('');
         setSelectedFamilyId(null);
@@ -110,7 +116,8 @@ export default function MembreScreen() {
     };
 
     const deleteFamily = async (familyId) => {
-        const data = await loadAppData();
+        const currentProjectKey = getSession('currentProjectKey');
+        const data = await loadAppData(currentProjectKey);
 
         const newFamilies = data.families.filter(f => f.id !== familyId);
 
@@ -124,12 +131,13 @@ export default function MembreScreen() {
             payments: newPayments,
         };
 
-        await saveAppData(updatedData);
+        await saveAppData(currentProjectKey, updatedData);
         setAppData(updatedData);
     }
 
     const supprimerMembre = async (memberId) => {
-        const data = await loadAppData();
+        const currentProjectKey = getSession('currentProjectKey');
+        const data = await loadAppData(currentProjectKey);
         if (!data) return;
 
         const updatedMembers = data.members.filter(member => member.id !== memberId);
@@ -142,14 +150,15 @@ export default function MembreScreen() {
             families: data.families
         };
 
-        await saveAppData(updatedData);
+        await saveAppData(currentProjectKey, updatedData);
         setAppData(updatedData);
     }
 
     const changerNom = async (newName, memberId) => {
         if (!memberId || !newName.trim()) return;
 
-        const data = await loadAppData();
+        const currentProjectKey = getSession('currentProjectKey');
+        const data = await loadAppData(currentProjectKey);
 
         const updatedMembers = data.members.map(member =>
             member.id === memberId ? { ...member, name: newName.trim() } : member
@@ -161,7 +170,7 @@ export default function MembreScreen() {
             payments: data.payments ?? [],
         };
 
-        await saveAppData(updatedData);
+        await saveAppData(currentProjectKey, updatedData);
         setAppData(updatedData);
         setEditModalVisible(false);
     };

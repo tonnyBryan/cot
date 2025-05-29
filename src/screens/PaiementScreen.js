@@ -1,11 +1,10 @@
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View,} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {loadAppData, saveAppData} from '../utils/storage';
 import {MONTANT_HEBDOMADAIRE_PAR_MEMBRE, DEVIS} from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
-
-
+import {SessionContext} from "../context/SessionProvider";
 
 export default function PaiementScreen() {
     const route = useRoute();
@@ -13,12 +12,14 @@ export default function PaiementScreen() {
     const [montantPaye, setMontantPaye] = useState('');
     const [paiementsExistants, setPaiementsExistants] = useState([]);
     const [totalPaiement, setTotalPaiement] = useState(0);
+    const { addSession, getSession } = useContext(SessionContext);
 
     const montantNormal = MONTANT_HEBDOMADAIRE_PAR_MEMBRE;
 
     useEffect(() => {
         const fetchPaiements = async () => {
-            const data = await loadAppData();
+            const currentProjectKey = getSession('currentProjectKey');
+            const data = await loadAppData(currentProjectKey);
 
             const paiements = data.payments.filter(
                 p => p.memberId === memberId && p.week === week
@@ -52,7 +53,8 @@ export default function PaiementScreen() {
 
     const payerNormal = async (montant) => {
         try {
-            const data = await loadAppData();
+            const currentProjectKey = getSession('currentProjectKey');
+            const data = await loadAppData(currentProjectKey);
 
             const newPayment = {
                 id: Date.now().toString(),
@@ -70,7 +72,7 @@ export default function PaiementScreen() {
                 payments: updatedPayments,
             };
 
-            await saveAppData(updatedAppData);
+            await saveAppData(currentProjectKey, updatedAppData);
 
         } catch (error) {
             console.error('Erreur lors de l’enregistrement du paiement :', error);
@@ -79,7 +81,8 @@ export default function PaiementScreen() {
 
     const payerEtendre = async (montant) => {
         try {
-            const data = await loadAppData();
+            const currentProjectKey = getSession('currentProjectKey');
+            const data = await loadAppData(currentProjectKey);
 
             let reste = montant;
             let currentWeek = week;
@@ -117,7 +120,7 @@ export default function PaiementScreen() {
                 payments,
             };
 
-            await saveAppData(updatedAppData);
+            await saveAppData(currentProjectKey, updatedAppData);
         } catch (error) {
             console.error('Erreur lors de l’enregistrement du paiement étendu :', error);
         }
@@ -162,7 +165,9 @@ export default function PaiementScreen() {
 
     const handlePaiementArrondi = async (montant) => {
         try {
-            const data = await loadAppData();
+            const currentProjectKey = getSession('currentProjectKey');
+
+            const data = await loadAppData(currentProjectKey);
             const resteAPayer = montantNormal - totalPaiement;
 
             if (montant <= resteAPayer) {

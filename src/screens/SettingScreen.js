@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {resetPaiements, resetAllData, loadAppData} from '../utils/storage';
@@ -7,9 +7,16 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {SessionContext} from "../context/SessionProvider";
+import { useNavigation } from '@react-navigation/native';
+
 
 
 export default function SettingScreen() {
+    const { addSession, getSession } = useContext(SessionContext);
+    const navigation = useNavigation();
+
+
     const handleResetPaiements = () => {
         Alert.alert(
             'Confirmation',
@@ -46,7 +53,8 @@ export default function SettingScreen() {
 
     const handleExportData = async () => {
         try {
-            const data = await loadAppData();
+            const currentProjectKey = getSession('currentProjectKey');
+            const data = await loadAppData(currentProjectKey);
             const json = JSON.stringify(data, null, 2);
 
             const fileUri = FileSystem.documentDirectory + 'cotisation_data.json';
@@ -66,6 +74,8 @@ export default function SettingScreen() {
 
     const handleImportData = async () => {
         try {
+            const currentProjectKey = getSession('currentProjectKey');
+
             const result = await DocumentPicker.getDocumentAsync({
                 type: 'application/json',
             });
@@ -95,7 +105,7 @@ export default function SettingScreen() {
                         style: 'destructive',
                         onPress: async () => {
                             authenticate(async () => {
-                                await AsyncStorage.setItem('appData', JSON.stringify(parsedData));
+                                await AsyncStorage.setItem(currentProjectKey, JSON.stringify(parsedData));
                             }, 'Les données ont été importées avec succès.');
                         }
 
@@ -106,6 +116,27 @@ export default function SettingScreen() {
             console.error('Erreur importation :', error);
             Alert.alert('Erreur', 'Échec de l’importation des données.');
         }
+    };
+
+    const handleQuitProject = () => {
+        Alert.alert(
+            'Quitter le projet',
+            'Voulez-vous vraiment quitter ce projet ?',
+            [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                    text: 'Confirmer',
+                    style: 'destructive',
+                    onPress: () => {
+                        addSession('currentProjectKey', null);
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'ProjectSelection' }],
+                        });
+                    },
+                },
+            ]
+        );
     };
 
     return (
@@ -140,6 +171,14 @@ export default function SettingScreen() {
                     <Text style={[styles.menuText, { color: '#d32f2f' }]}>Réinitialisation complète</Text>
                 </TouchableOpacity>
             </View>
+
+            <View style={styles.cardWrapper}>
+                <TouchableOpacity style={styles.menuItem} onPress={handleQuitProject} activeOpacity={0.7}>
+                    <Ionicons name="log-out-outline" size={24} color="#6d4c41" style={styles.icon} />
+                    <Text style={[styles.menuText, { color: '#6d4c41' }]}>Quitter le projet</Text>
+                </TouchableOpacity>
+            </View>
+
         </View>
     );
 }

@@ -51,7 +51,8 @@ export default function AccueilScreen() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const data = await loadAppData();
+            const currentProjectKey = getSession('currentProjectKey');
+            const data = await loadAppData(currentProjectKey);
 
             setAppData(data);
             setFamilies(data.families);

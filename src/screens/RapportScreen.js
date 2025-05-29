@@ -1,19 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, {useState, useCallback, useContext} from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { loadAppData } from '../utils/storage';
 import {Ionicons} from "@expo/vector-icons";
+import {SessionContext} from "../context/SessionProvider";
 
 export default function RapportScreen() {
     const [appData, setAppData] = useState(null);
     const [total, setTotal] = useState(0);
     const [totauxParFamille, setTotauxParFamille] = useState({});
     const [openFamilies, setOpenFamilies] = useState({});
+    const { addSession, getSession } = useContext(SessionContext);
+
 
     useFocusEffect(
         useCallback(() => {
             const fetchData = async () => {
-                const data = await loadAppData();
+                const currentProjectKey = getSession('currentProjectKey');
+                const data = await loadAppData(currentProjectKey);
                 setAppData(data);
 
                 if (!data) return;
