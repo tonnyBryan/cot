@@ -36,3 +36,27 @@ export const resetAllData = async (dataStorageKey) => {
     };
     await saveAppData(dataStorageKey, emptyData);
 };
+
+export const creerProjet = async (nouveauProjet) => {
+    try {
+        const projetsJson = await AsyncStorage.getItem('projets');
+        const projets = projetsJson ? JSON.parse(projetsJson) : [];
+
+        projets.push(nouveauProjet);
+        await AsyncStorage.setItem('projets', JSON.stringify(projets));
+
+        const dataVide = {
+            families: [],
+            members: [],
+            payments: [],
+        };
+        await AsyncStorage.setItem(nouveauProjet.data_storage_key, JSON.stringify(dataVide));
+
+    } catch (error) {
+        console.error('❌ Erreur lors de la création du projet :', error);
+    }
+};
+
+
+
+

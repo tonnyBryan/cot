@@ -13,11 +13,14 @@ import { useNavigation } from '@react-navigation/native';
 
 
 export default function SettingScreen() {
-    const { addSession, getSession } = useContext(SessionContext);
+    const { removeSession, getSession } = useContext(SessionContext);
     const navigation = useNavigation();
 
+    const currentProject = getSession('currentProject');
 
     const handleResetPaiements = () => {
+        const currentProjectKey = getSession('currentProjectKey');
+
         Alert.alert(
             'Confirmation',
             'Voulez-vous vraiment réinitialiser tous les paiements ? Cette action est irréversible.',
@@ -27,7 +30,7 @@ export default function SettingScreen() {
                     text: 'Confirmer',
                     style: 'destructive',
                     onPress: () => {
-                        authenticate(resetPaiements, 'Tous les paiements ont été réinitialisés.');
+                        authenticate(() => resetPaiements(currentProjectKey), 'Tous les paiements ont été réinitialisés.');
                     }
                 }
             ]
@@ -35,6 +38,8 @@ export default function SettingScreen() {
     };
 
     const handleFullReset = () => {
+        const currentProjectKey = getSession('currentProjectKey');
+
         Alert.alert(
             'Réinitialisation complète',
             'Cela supprimera toutes les familles, membres et paiements. Voulez-vous vraiment continuer ?',
@@ -44,7 +49,7 @@ export default function SettingScreen() {
                     text: 'Confirmer',
                     style: 'destructive',
                     onPress: () => {
-                        authenticate(resetAllData, 'Toutes les données ont été réinitialisées.');
+                        authenticate(() => resetAllData(currentProjectKey), 'Toutes les données ont été réinitialisées.');
                     }
                 }
             ]
@@ -128,7 +133,8 @@ export default function SettingScreen() {
                     text: 'Confirmer',
                     style: 'destructive',
                     onPress: () => {
-                        addSession('currentProjectKey', null);
+                        removeSession('currentProjectKey');
+                        removeSession('selectedFamilyName');
                         navigation.reset({
                             index: 0,
                             routes: [{ name: 'ProjectSelection' }],
@@ -143,10 +149,19 @@ export default function SettingScreen() {
         <View style={styles.container}>
             <Text style={styles.title}>Paramètres</Text>
 
+            {currentProject && (
+                <View style={styles.projectCard}>
+                    <Ionicons name={currentProject.logo} size={36} color="#4068a1" style={{ marginBottom: 8 }} />
+                    <Text style={styles.projectName}>{currentProject.nom || 'Projet courant'}</Text>
+                    <View style={styles.divider} />
+                </View>
+            )}
+
+
             <View style={styles.cardWrapper}>
                 <TouchableOpacity style={styles.menuItem} onPress={handleExportData} activeOpacity={0.7}>
                     <Ionicons name="download-outline" size={24} color="#1976d2" style={styles.icon} />
-                    <Text style={[styles.menuText, { color: '#1976d2' }]}>Exporter les données</Text>
+                    <Text style={[styles.menuText, { color: '#4068a1' }]}>Exporter les données</Text>
                 </TouchableOpacity>
             </View>
 
@@ -185,6 +200,36 @@ export default function SettingScreen() {
 
 
 const styles = StyleSheet.create({
+    projectCard: {
+        alignItems: 'center',
+        backgroundColor: '#e0e3e3',
+        paddingVertical: 20,
+        paddingHorizontal: 10,
+        borderRadius: 12,
+        marginBottom: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+
+    projectName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#4068a1',
+        marginBottom: 10,
+    },
+
+    divider: {
+        height: 1,
+        backgroundColor: '#bbb',
+        alignSelf: 'stretch',
+        marginTop: 10,
+        marginHorizontal: 10,
+    },
+
+
     cardWrapper: {
         borderRadius: 12,
         overflow: 'hidden',

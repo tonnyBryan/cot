@@ -282,7 +282,7 @@ export default function PaiementScreen() {
                             <Text
                                 style={ styles.inputUnit }
                             >
-                                AR
+                                {DEVIS}
                             </Text>
                         </View>
 

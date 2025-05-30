@@ -6,6 +6,7 @@ import AccueilScreen from '../screens/AccueilScreen';
 import MembreScreen from '../screens/MembreScreen';
 import RapportScreen from '../screens/RapportScreen';
 import SettingScreen from "../screens/SettingScreen";
+import IAScreen from "../screens/IAScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -22,8 +23,10 @@ export default function BottomTabNavigator() {
                         iconName = 'people-outline';
                     } else if (route.name === 'Rapport') {
                         iconName = 'analytics-outline';
-                    } else if (route.name === 'Paramètres') {
-                        iconName = 'settings-outline';
+                    } else if (route.name === 'Menu') {
+                        iconName = 'menu-outline';
+                    } else if (route.name === 'IA') {
+                        iconName = 'sparkles-outline'; // Icône IA
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
@@ -31,12 +34,14 @@ export default function BottomTabNavigator() {
                 tabBarActiveTintColor: '#4068a1',
                 tabBarInactiveTintColor: 'gray',
                 headerShown: false,
+                // tabBarShowLabel: false,
             })}
         >
             <Tab.Screen name="Accueil" component={AccueilScreen} />
             <Tab.Screen name="Membre" component={MembreScreen} />
             <Tab.Screen name="Rapport" component={RapportScreen} />
-            <Tab.Screen name="Paramètres" component={SettingScreen} />
+            <Tab.Screen name="IA" component={IAScreen} />
+            <Tab.Screen name="Menu" component={SettingScreen} />
         </Tab.Navigator>
     );
 }
