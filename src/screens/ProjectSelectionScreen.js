@@ -22,8 +22,6 @@ export default function ProjectSelectionScreen() {
         let stored = await AsyncStorage.getItem('projets');
         let parsed = stored ? JSON.parse(stored) : [];
 
-        console.log(parsed);
-
         const hasDefault = parsed.some(proj => proj.data_storage_key === DEFAULT_PROJECT.data_storage_key);
 
         if (!hasDefault) {
