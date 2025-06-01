@@ -9,7 +9,7 @@ import {
     Keyboard,
     Platform,
     ScrollView,
-    Pressable
+    Pressable, Dimensions, Animated, TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import IAContext, {getSystemMessage} from "../chatbot/IAStatic";
@@ -17,6 +17,9 @@ import LottieView from 'lottie-react-native';
 import {SessionContext} from "../context/SessionProvider";
 import {loadAppData} from "../utils/storage";
 import IAParsedMessage from '../chatbot/IAParsedMessage';
+import {convertToNoSQL} from "../utils/func";
+import IASidebarHelp from '../components/IASidebarHelp';
+
 
 
 
@@ -26,9 +29,26 @@ export default function IAScreen() {
     const scrollViewRef = useRef();
     const [isTyping, setIsTyping] = useState(false);
     const { getSession } = useContext(SessionContext);
-
+    const [sidebarVisible, setSidebarVisible] = useState(false);
+    const slideAnim = useRef(new Animated.Value(-Dimensions.get('window').width)).current;
     const currentProject = getSession('currentProject');
 
+
+    const toggleSidebar = () => {
+        const toValue = sidebarVisible ? -Dimensions.get('window').width : 0;
+
+        if (!sidebarVisible) {
+            Keyboard.dismiss();
+        }
+
+        Animated.timing(slideAnim, {
+            toValue,
+            duration: 300,
+            useNativeDriver: false,
+        }).start(() => {
+            setSidebarVisible(!sidebarVisible);
+        });
+    };
 
     const handleSend = async () => {
         if (!inputText.trim()) return;
@@ -44,9 +64,10 @@ export default function IAScreen() {
             setIsTyping(true);
 
             const appData = await loadAppData(currentProject.data_storage_key);
+
             const systemMessage = {
                 role: 'system',
-                content: getSystemMessage(IAContext, currentProject, appData)
+                content: getSystemMessage(IAContext, currentProject, convertToNoSQL(appData))
             };
 
             const formattedMessages = [
@@ -57,7 +78,7 @@ export default function IAScreen() {
                 }))
             ];
 
-            console.log(formattedMessages);
+            //console.log(formattedMessages);
 
             // const formattedMessages = updatedMessages.map(msg => ({
             //     role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -90,8 +111,6 @@ export default function IAScreen() {
             const botMessage = { sender: 'bot', text: botReply };
             setMessages(prev => [...prev, botMessage]);
             setIsTyping(false);
-
-            console.log(messages)
         } catch (error) {
             console.error("Erreur API :", error);
             setMessages(prev => [
@@ -115,16 +134,24 @@ export default function IAScreen() {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+
                 <View style={styles.container}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.title}>{IAContext.aiName} </Text>
-                        <LottieView
-                            source={require('../animation/bot.json')}
-                            autoPlay
-                            loop
-                            style={{ width: 35, height: 35 , bottom: 8, right: 15}}
-                        />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.title}>{IAContext.aiName}</Text>
+                            <LottieView
+                                source={require('../animation/bot.json')}
+                                autoPlay
+                                loop
+                                style={{ width: 35, height: 35, bottom: 8, right: 15 }}
+                            />
+                        </View>
+
+                        <TouchableOpacity style={{ bottom: 8 , right: 5 }} onPress={toggleSidebar}>
+                            <Ionicons  name="help-circle-outline" size={35} color="#4068a1" />
+                        </TouchableOpacity>
                     </View>
+
 
                     <ScrollView
                         style={styles.chatContainer}
@@ -134,10 +161,20 @@ export default function IAScreen() {
                         keyboardDismissMode="on-drag"
                     >
                         {messages.length === 0 && (
-                            <Text style={styles.placeholderText}>
-                                Commencez à discuter avec l'IA...
-                            </Text>
+                            <View style={{ alignItems: 'center', marginVertical: 20 }}>
+                                <LottieView
+                                    source={require('../animation/bot-full2.json')}
+                                    autoPlay
+                                    loop
+                                    style={{ width: 150, height: 150 }}
+                                />
+                                <Text style={styles.placeholderText}>
+                                    Commencez à discuter avec{' '}
+                                    <Text style={styles.aiNameUnique}>{IAContext.aiName}</Text>
+                                </Text>
+                            </View>
                         )}
+
                         {messages.map((msg, index) => (
                             <View
                                 key={index}
@@ -209,18 +246,23 @@ export default function IAScreen() {
                         <Pressable
                             style={styles.sendButton}
                             onPress={handleSend}
-                            disabled={!inputText.trim()}
+                            disabled={!inputText.trim() || sidebarVisible} // <- désactivé si texte vide ou sidebar ouvert
                         >
                             <Ionicons name="send" size={22} color="#fff" />
                         </Pressable>
                     </View>
                 </View>
             </TouchableWithoutFeedback>
+            <IASidebarHelp visible={sidebarVisible} onClose={toggleSidebar} slideAnim={slideAnim} />
         </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
+    aiNameUnique: {
+        fontWeight: '700',
+    },
+
     senderText: {
         fontSize: 12,
         marginBottom: 4,

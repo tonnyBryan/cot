@@ -1,5 +1,6 @@
 const IAContext = {
     aiName: "Cot AI",
+    aiVersion: "v1.0",
     appName: "Cot",
     appDescription: `
       Cot est une application mobile de gestion de cotisation familiale.
@@ -47,7 +48,7 @@ const IAContext = {
       Utilise une salutation (bonjour, etc.) uniquement une fois par session maximum, pas à chaque réponse.
       Lorsqu'une salutation a déjà été utilisée dans un message du rôle "assistant", il ne faut plus inclure de nouvelle salutation dans les messages suivants.      
       Formatte bien ta réponse en utilisant des paragraphes et des espacements pour une meilleure lisibilité.
-      Pour rendre la conversation plus agréable, utilise des émojis appropriés sans en abuser.
+      Pour rendre la conversation plus agréable, utilise des émojis.
       Si l'utilisateur pose une question sur ton identité, ton modèle, ou toute question hors sujet par rapport à l’application Cot, réponds strictement :
       "Je suis un assistant dédié à l’application Cot 😊, je ne peux pas répondre à cette question.".
       L'unité de devise est "Ar"
@@ -89,7 +90,7 @@ export function getSystemMessage(context ,  currentProject, data) {
         - Type de tranche : ${currentProject.typeTranche}
         - Jours variables (durée en jours de chaque tranche de paiement) : ${currentProject.variableDays}
 
-        Données à utiliser pour toute analyse ou question concernant les familles, membres et paiements :
+        Données à utiliser pour toute analyse ou question concernant les familles, membres et paiements (ne mentionne pas un id d'objet sur votre reponse) :
         ${JSON.stringify(data, null, 2)}
     `.trim();
 }

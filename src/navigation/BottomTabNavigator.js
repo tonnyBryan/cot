@@ -7,6 +7,7 @@ import MembreScreen from '../screens/MembreScreen';
 import RapportScreen from '../screens/RapportScreen';
 import SettingScreen from "../screens/SettingScreen";
 import IAScreen from "../screens/IAScreen";
+import LottieView from "lottie-react-native";
 
 const Tab = createBottomTabNavigator();
 
@@ -15,26 +16,28 @@ export default function BottomTabNavigator() {
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
-                    let iconName;
-
-                    if (route.name === 'Accueil') {
-                        iconName = 'home-outline';
-                    } else if (route.name === 'Membre') {
-                        iconName = 'people-outline';
-                    } else if (route.name === 'Rapport') {
-                        iconName = 'analytics-outline';
-                    } else if (route.name === 'Menu') {
-                        iconName = 'menu-outline';
-                    } else if (route.name === 'IA') {
-                        iconName = 'sparkles-outline'; // Icône IA
+                    if (route.name === 'IA') {
+                        return (
+                            <LottieView
+                                source={require('../animation/bot-icon2.json')}
+                                autoPlay
+                                loop
+                                style={{ width: size + 6, height: size + 6 }}
+                            />
+                        );
                     }
+
+                    let iconName;
+                    if (route.name === 'Accueil') iconName = 'home-outline';
+                    else if (route.name === 'Membre') iconName = 'people-outline';
+                    else if (route.name === 'Rapport') iconName = 'analytics-outline';
+                    else if (route.name === 'Menu') iconName = 'menu-outline';
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
                 tabBarActiveTintColor: '#4068a1',
                 tabBarInactiveTintColor: 'gray',
                 headerShown: false,
-                // tabBarShowLabel: false,
             })}
         >
             <Tab.Screen name="Accueil" component={AccueilScreen} />
