@@ -131,6 +131,7 @@ export default function CreateProjectScreen() {
             typeTranche,
             variableDays: typeTranche === 'variable' ? Number(variableDays) : days,
             data_storage_key: `project_${Date.now()}`,
+            uuid: Date.now().toString(),
         };
 
         try {

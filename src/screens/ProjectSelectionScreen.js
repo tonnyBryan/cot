@@ -9,6 +9,7 @@ import {authenticate} from "../utils/auth";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Animated } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 
 
 const DEFAULT_PROJECT = {
@@ -16,6 +17,7 @@ const DEFAULT_PROJECT = {
     logo: 'folder-outline',
     dateCreation: new Date().toISOString(),
     data_storage_key: 'appData',
+    uuid: "appData",
 
     dateDebut: new Date().toISOString(),
     dateFin: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
@@ -32,8 +34,6 @@ export default function ProjectSelectionScreen() {
     const isFocused = useIsFocused();
     const [selectedProjectKey, setSelectedProjectKey] = useState(null);
     const animationRefs = useRef({});
-
-
 
     const loadProjects = async () => {
         let stored = await AsyncStorage.getItem('projets');
@@ -86,6 +86,88 @@ export default function ProjectSelectionScreen() {
         } catch (error) {
             console.error('❌ Erreur exportation projet :', error);
             Alert.alert('Erreur', 'Impossible d’exporter le projet.');
+        }
+    };
+
+    const handleImportProject = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/json',
+            });
+
+            if (result.canceled || !result.assets || result.assets.length === 0) {
+                return;
+            }
+
+            const file = result.assets[0];
+            const content = await FileSystem.readAsStringAsync(file.uri);
+            const parsedFile = JSON.parse(content);
+
+            if (
+                !parsedFile.projet ||
+                !parsedFile.projet.nom ||
+                !parsedFile.projet.logo ||
+                !parsedFile.projet.montant_par_tranche ||
+                !parsedFile.projet.dateCreation ||
+                !parsedFile.projet.dateDebut ||
+                !parsedFile.projet.dateFin ||
+                !parsedFile.projet.typeTranche ||
+                !parsedFile.projet.variableDays ||
+                !parsedFile.projet.uuid ||
+                !parsedFile.projet.data_storage_key ||
+                !parsedFile.data ||
+                !parsedFile.data.families ||
+                !parsedFile.data.members ||
+                !parsedFile.data.payments
+            ) {
+                Alert.alert('Fichier invalide', 'Le fichier ne correspond pas au format projet complet attendu.');
+                return;
+            }
+
+            const { projet: importedProjet, data } = parsedFile;
+
+            const existingProjects = await AsyncStorage.getItem('projets');
+            const projects = existingProjects ? JSON.parse(existingProjects) : [];
+
+            let baseName = importedProjet.nom.trim();
+            let newName = baseName;
+            let suffix = 1;
+
+            while (projects.some(p => p.nom.trim().toLowerCase() === newName.toLowerCase())) {
+                newName = `${baseName}_${suffix}`;
+                suffix++;
+            }
+
+
+            const newStorageKey = `projet_${Date.now()}`;
+            const projetToImport = {
+                ...importedProjet,
+                data_storage_key: newStorageKey,
+                nom: newName
+            };
+
+            Alert.alert(
+                'Confirmation',
+                `Voulez-vous importer le projet "${projetToImport.nom}" ?`,
+                [
+                    { text: 'Annuler', style: 'cancel' },
+                    {
+                        text: 'Importer',
+                        onPress: async () => {
+                            const newProjects = [...projects, projetToImport];
+                            await AsyncStorage.setItem('projets', JSON.stringify(newProjects));
+                            await AsyncStorage.setItem(newStorageKey, JSON.stringify(data));
+                            setProjects(newProjects);
+                            Alert.alert('Succès', 'Projet importé avec succès.');
+                        },
+                        style: 'default',
+                    },
+                ]
+            );
+
+        } catch (error) {
+            console.error('Erreur import projet :', error);
+            Alert.alert('Erreur', 'Échec de l’importation du projet complet.');
         }
     };
 
@@ -148,8 +230,6 @@ export default function ProjectSelectionScreen() {
         );
     };
 
-
-
     const createProject = () => {
         navigation.navigate('CreateProject');
     };
@@ -186,10 +266,6 @@ export default function ProjectSelectionScreen() {
         );
     };
 
-
-
-
-
     return (
         <View style={styles.container}>
             <Text style={styles.appName}>Cot™</Text>
@@ -201,6 +277,10 @@ export default function ProjectSelectionScreen() {
                 contentContainerStyle={{ paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
             />
+
+            <TouchableOpacity style={styles.importFab}  onPress={handleImportProject}>
+                <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.fab} onPress={createProject}>
                 <Ionicons name="add" size={28} color="#fff" />
@@ -289,4 +369,22 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 3 },
         shadowRadius: 6,
     },
+
+    importFab: {
+        position: 'absolute',
+        bottom: 100,
+        right: 30,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#4caf50',
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+    },
+
 });

@@ -62,7 +62,7 @@ export default function SettingScreen() {
             const data = await loadAppData(currentProjectKey);
 
             const finalData = {
-                data_storage_key: currentProjectKey,
+                uuid: currentProject.uuid,
                 data: data,
             };
 
@@ -100,7 +100,7 @@ export default function SettingScreen() {
             const parsedFile = JSON.parse(content);
 
             if (
-                !parsedFile.data_storage_key ||
+                !parsedFile.uuid ||
                 !parsedFile.data ||
                 !parsedFile.data.families ||
                 !parsedFile.data.members ||
@@ -110,7 +110,7 @@ export default function SettingScreen() {
                 return;
             }
 
-            if (parsedFile.data_storage_key !== currentProjectKey) {
+            if (parsedFile.uuid !== currentProject.uuid) {
                 Alert.alert('Clé de projet incorrecte', 'Ce fichier n’appartient pas à ce projet.');
                 return;
             }
@@ -148,6 +148,7 @@ export default function SettingScreen() {
                     style: 'destructive',
                     onPress: () => {
                         removeSession('currentProjectKey');
+                        removeSession('currentProject');
                         removeSession('selectedFamilyName');
                         navigation.reset({
                             index: 0,
@@ -161,7 +162,7 @@ export default function SettingScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Paramètres</Text>
+            <Text style={styles.title}>Menu</Text>
 
             {currentProject && (
                 <View style={styles.projectCard}>

@@ -20,19 +20,17 @@ const IAContext = {
 
 
     screens: {
-        ChoixProjet: "Écran d’accueil permettant de choisir un projet de cotisation existant ou d’en créer un nouveau.",
+        ChoixProjet: "Écran d’accueil affichant la liste des projets existants. L’utilisateur peut créer un nouveau projet via le bouton '+' en bas à droite, importer un projet via le bouton 'cloud' également en bas à droite. Pour exporter ou supprimer un projet, il faut appuyer longuement sur celui-ci : les boutons correspondants apparaissent alors pendant 5 secondes, permettant de choisir l’action avant de disparaître automatiquement.",
 
-        TableauPaiement: "Affiche un tableau clair du statut de paiement de chaque membre pour chaque tranche (payé, non payé, partiellement payé). En cliquant sur une cellule, on accède à l’écran de paiement correspondant.",
+        TableauPaiement: "Affiche un tableau clair du statut de paiement de chaque membre pour chaque tranche (payé, non payé, partiellement payé). Un sélecteur de famille permet de choisir la famille dont les données sont affichées ; en changeant cette sélection, le tableau se met à jour automatiquement. Le tableau a pour en-têtes l’intervalle et les membres de la famille sélectionnée. La première colonne de chaque ligne indique l’intervalle de dates, tandis que les autres colonnes affichent le statut de paiement de chaque membre : vert si payé, jaune si partiellement payé, et neutre si non payé. En cliquant sur une cellule, on accède à l’écran de paiement correspondant.",
 
         GestionMembres: "Permet de gérer les familles et les membres : ajouter, modifier ou supprimer des familles ou des membres.",
 
-        Paiement: "Permet d’enregistrer un paiement pour un membre donné et une tranche spécifique. Affiche également la liste des paiements précédents de ce membre pour cette tranche.",
+        Paiement: "Écran permettant d’enregistrer un paiement pour un membre donné sur une tranche spécifique. Il affiche les informations liées à la cellule sélectionnée dans le tableau de paiement: nom du membre, famille, intervalle de dates concerné, et le montant total à payer pour cette tranche. Un champ permet de saisir le montant à enregistrer. Si un paiement partiel a déjà été effectué, le reste à payer est automatiquement indiqué. Une liste en dessous affiche l’historique des paiements précédemment effectués par ce membre sur cette même tranche.",
 
-        Rapport: "Affiche une analyse globale des paiements : total général, total par famille, total par membre, avec des statistiques visuelles.",
+        Rapport: "Écran affichant une analyse globale des paiements enregistrés dans le projet. Il présente le total général des paiements ainsi que le total par famille. En cliquant sur le total d’une famille, l’utilisateur accède aux détails, affichant pour chaque membre de cette famille le montant total qu’il a payé. Cet écran facilite une vue d’ensemble claire et hiérarchisée des contributions.",
 
-        MenuProjet: "Présente les caractéristiques du projet de cotisation sélectionné. Contient des options pour exporter, importer ou réinitialiser les données.",
-
-        Aide: "Contient une FAQ ainsi qu’un accès à l’assistant IA pour répondre aux questions sur le fonctionnement de l’application."
+        Menu: "Affiche les informations du projet de cotisation actuellement sélectionné. L’écran contient plusieurs options : un bouton pour exporter les données du projet (familles, membres, paiements), un bouton pour importer ces types de données, un bouton pour réinitialiser tous les paiements du projet, et un bouton pour quitter le projet, ce qui ramène à l’écran de choix de projet.",
     },
 
     limitations: [
@@ -51,7 +49,8 @@ const IAContext = {
       Pour rendre la conversation plus agréable, utilise des émojis.
       Si l'utilisateur pose une question sur ton identité, ton modèle, ou toute question hors sujet par rapport à l’application Cot, réponds strictement :
       "Je suis un assistant dédié à l’application Cot 😊, je ne peux pas répondre à cette question.".
-      L'unité de devise est "Ar"
+      L'unité de devise est "Ar".
+      Le format de fichier utilisé (import / export) par cette application est le format ".json"
     `,
 
     api_url: "https://api.groq.com/openai/v1/chat/completions",
