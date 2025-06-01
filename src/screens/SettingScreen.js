@@ -60,7 +60,13 @@ export default function SettingScreen() {
         try {
             const currentProjectKey = getSession('currentProjectKey');
             const data = await loadAppData(currentProjectKey);
-            const json = JSON.stringify(data, null, 2);
+
+            const finalData = {
+                data_storage_key: currentProjectKey,
+                data: data,
+            };
+
+            const json = JSON.stringify(finalData, null, 2);
 
             const fileUri = FileSystem.documentDirectory + 'cotisation_data.json';
             await FileSystem.writeAsStringAsync(fileUri, json, {
@@ -86,17 +92,26 @@ export default function SettingScreen() {
             });
 
             if (result.canceled || !result.assets || result.assets.length === 0) {
-                return; // L'utilisateur a annulé ou rien sélectionné
+                return;
             }
 
             const file = result.assets[0];
-
             const content = await FileSystem.readAsStringAsync(file.uri);
-            const parsedData = JSON.parse(content);
+            const parsedFile = JSON.parse(content);
 
-            // Vérification basique du format
-            if (!parsedData.families || !parsedData.members || !parsedData.payments) {
-                Alert.alert('Fichier invalide', 'Ce fichier ne correspond pas au format attendu.');
+            if (
+                !parsedFile.data_storage_key ||
+                !parsedFile.data ||
+                !parsedFile.data.families ||
+                !parsedFile.data.members ||
+                !parsedFile.data.payments
+            ) {
+                Alert.alert('Fichier invalide', 'Le fichier ne correspond pas au format attendu.');
+                return;
+            }
+
+            if (parsedFile.data_storage_key !== currentProjectKey) {
+                Alert.alert('Clé de projet incorrecte', 'Ce fichier n’appartient pas à ce projet.');
                 return;
             }
 
@@ -108,12 +123,11 @@ export default function SettingScreen() {
                     {
                         text: 'Importer',
                         style: 'destructive',
-                        onPress: async () => {
+                        onPress: () => {
                             authenticate(async () => {
-                                await AsyncStorage.setItem(currentProjectKey, JSON.stringify(parsedData));
+                                await AsyncStorage.setItem(currentProjectKey, JSON.stringify(parsedFile.data));
                             }, 'Les données ont été importées avec succès.');
                         }
-
                     }
                 ]
             );
@@ -161,7 +175,7 @@ export default function SettingScreen() {
             <View style={styles.cardWrapper}>
                 <TouchableOpacity style={styles.menuItem} onPress={handleExportData} activeOpacity={0.7}>
                     <Ionicons name="download-outline" size={24} color="#1976d2" style={styles.icon} />
-                    <Text style={[styles.menuText, { color: '#4068a1' }]}>Exporter les données</Text>
+                    <Text style={[styles.menuText, { color: '#4068a1' }]}>Exporter les données du projet</Text>
                 </TouchableOpacity>
             </View>
 

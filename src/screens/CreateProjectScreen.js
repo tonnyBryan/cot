@@ -133,13 +133,16 @@ export default function CreateProjectScreen() {
             data_storage_key: `project_${Date.now()}`,
         };
 
-        console.log(newProject);
-        await creerProjet(newProject);
-        Alert.alert('Succès', 'Projet créé avec succès !');
-        navigation.reset({
-            index: 0,
-            routes: [{name: 'ProjectSelection'}],
-        });
+        try {
+            await creerProjet(newProject);
+            navigation.reset({
+                index: 0,
+                routes: [{name: 'ProjectSelection'}],
+            });
+            Alert.alert('Succès', 'Projet créé avec succès !');
+        } catch (err) {
+            Alert.alert('Erreur', err.message);
+        }
     }
 
 

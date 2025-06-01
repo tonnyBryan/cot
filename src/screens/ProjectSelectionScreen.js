@@ -4,19 +4,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused, useNavigation} from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { SessionContext } from "../context/SessionProvider";
+import {loadAppData, supprimerProjet} from "../utils/storage";
+import {authenticate} from "../utils/auth";
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 const DEFAULT_PROJECT = {
     nom: 'Default Project',
     logo: 'folder-outline',
     dateCreation: new Date().toISOString(),
     data_storage_key: 'appData',
+
+    dateDebut: new Date().toISOString(),
+    dateFin: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+    montant_par_tranche: 10000,
+    typeTranche: 'week',
+    variableDays: 7
 };
+
 
 export default function ProjectSelectionScreen() {
     const [projects, setProjects] = useState([]);
     const navigation = useNavigation();
     const { addSession } = useContext(SessionContext);
     const isFocused = useIsFocused();
+    const [selectedProjectKey, setSelectedProjectKey] = useState(null);
+
 
     const loadProjects = async () => {
         let stored = await AsyncStorage.getItem('projets');
@@ -32,6 +45,7 @@ export default function ProjectSelectionScreen() {
         parsed.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
 
         setProjects(parsed);
+        console.log(parsed);
     };
 
     useEffect(() => {
@@ -46,21 +60,106 @@ export default function ProjectSelectionScreen() {
         navigation.replace('MainTabs');
     };
 
-    const renderItem = ({ item }) => (
-        <View style={styles.cardWrapper}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => selectProject(item)}>
-                <Ionicons name={item.logo} size={28} color="#1e88e5" style={styles.icon} />
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.projectName}>{item.nom}</Text>
-                    <Text style={styles.projectDate}>Créé le {new Date(item.dateCreation).toLocaleDateString()}</Text>
-                </View>
-            </TouchableOpacity>
-        </View>
-    );
+    const handleExportProjet = async (projet) => {
+        try {
+            const data = await loadAppData(projet.data_storage_key);
+
+            const finalData = {
+                projet,
+                data
+            };
+
+            const json = JSON.stringify(finalData, null, 2);
+
+            const fileUri = FileSystem.documentDirectory + `projet_${projet.nom.replace(/\s+/g, '_')}.json`;
+            await FileSystem.writeAsStringAsync(fileUri, json, {
+                encoding: FileSystem.EncodingType.UTF8,
+            });
+
+            await Sharing.shareAsync(fileUri, {
+                mimeType: 'application/json',
+                dialogTitle: 'Exporter le projet',
+            });
+        } catch (error) {
+            console.error('❌ Erreur exportation projet :', error);
+            Alert.alert('Erreur', 'Impossible d’exporter le projet.');
+        }
+    };
+
+
+    const renderItem = ({ item }) => {
+        const isSelected = selectedProjectKey === item.data_storage_key;
+
+        return (
+            <View style={styles.cardWrapper}>
+                <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => selectProject(item)}
+                    onLongPress={() => {
+                        setSelectedProjectKey(item.data_storage_key);
+                        setTimeout(() => setSelectedProjectKey(null), 5000);
+                    }}
+
+                >
+                    <Ionicons name={item.logo} size={28} color="#1e88e5" style={styles.icon} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.projectName}>{item.nom}</Text>
+                        <Text style={styles.projectDate}>Créé le {new Date(item.dateCreation).toLocaleDateString()}</Text>
+                    </View>
+
+                    {isSelected && (
+                        <View style={styles.actions}>
+                            <TouchableOpacity
+                                style={styles.actionBtn}
+                                onPress={() => handleExportProjet(item)}
+                            >
+                                <Ionicons name="download-outline" size={20} color="#4068a1" />
+                            </TouchableOpacity>
+
+
+                            {item.data_storage_key !== 'appData' && (
+                                <TouchableOpacity
+                                    style={styles.actionBtn}
+                                    onPress={() => confirmDeleteProject(item.data_storage_key)}
+                                >
+                                    <Ionicons name="trash-outline" size={20} color="#e53935" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+                </TouchableOpacity>
+            </View>
+        );
+    };
+
 
     const createProject = () => {
         navigation.navigate('CreateProject');
     };
+
+    const confirmDeleteProject = (projectKey) => {
+        Alert.alert(
+            'Confirmation',
+            'Voulez-vous vraiment supprimer ce projet ? Cette action est irréversible.',
+            [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                    text: 'Confirmer',
+                    style: 'destructive',
+                    onPress: () => {
+                        authenticate(
+                            async () => {
+                                await supprimerProjet(projectKey);
+                                await loadProjects();
+                            },
+                            'Le projet a été supprimé avec succès.'
+                        );
+                    }
+                }
+            ]
+        );
+    };
+
 
 
     return (
@@ -83,6 +182,18 @@ export default function ProjectSelectionScreen() {
 }
 
 const styles = StyleSheet.create({
+    actions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+
+    actionBtn: {
+        marginLeft: 10,
+        padding: 6,
+        borderRadius: 8,
+        backgroundColor: '#f1f3f6',
+    },
+
     cardWrapper: {
         borderRadius: 12,
         overflow: 'hidden',

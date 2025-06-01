@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Alert} from "react-native";
 
 export const loadAppData = async (dataStorageKey) => {
     try {
@@ -42,6 +43,16 @@ export const creerProjet = async (nouveauProjet) => {
         const projetsJson = await AsyncStorage.getItem('projets');
         const projets = projetsJson ? JSON.parse(projetsJson) : [];
 
+        const nomExistant = projets.some(
+            projet => projet.nom.trim().toLowerCase() === nouveauProjet.nom.trim().toLowerCase()
+        );
+
+        if (nomExistant) {
+            const err = new Error(`Un projet nommé "${nouveauProjet.nom}" existe déjà.`);
+            console.log(err.message);
+            throw err;
+        }
+
         projets.push(nouveauProjet);
         await AsyncStorage.setItem('projets', JSON.stringify(projets));
 
@@ -51,11 +62,29 @@ export const creerProjet = async (nouveauProjet) => {
             payments: [],
         };
         await AsyncStorage.setItem(nouveauProjet.data_storage_key, JSON.stringify(dataVide));
-
     } catch (error) {
-        console.error('❌ Erreur lors de la création du projet :', error);
+        console.log('❌ Erreur lors de la création du projet :', error.message);
+        throw error;
     }
 };
+
+export const supprimerProjet = async (dataStorageKeyToRemove) => {
+    try {
+        const projetsJson = await AsyncStorage.getItem('projets');
+        let projets = projetsJson ? JSON.parse(projetsJson) : [];
+
+        projets = projets.filter(proj => proj.data_storage_key !== dataStorageKeyToRemove);
+
+        await AsyncStorage.setItem('projets', JSON.stringify(projets));
+
+        await AsyncStorage.removeItem(dataStorageKeyToRemove);
+
+        console.log(`Projet ${dataStorageKeyToRemove} supprimé avec succès.`);
+    } catch (error) {
+        console.error(`❌ Erreur lors de la suppression du projet ${dataStorageKeyToRemove}:`, error);
+    }
+};
+
 
 
 
