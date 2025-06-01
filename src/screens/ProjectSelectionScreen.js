@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused, useNavigation} from '@react-navigation/native';
@@ -8,6 +8,8 @@ import {loadAppData, supprimerProjet} from "../utils/storage";
 import {authenticate} from "../utils/auth";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { Animated } from 'react-native';
+
 
 const DEFAULT_PROJECT = {
     nom: 'Default Project',
@@ -29,6 +31,8 @@ export default function ProjectSelectionScreen() {
     const { addSession } = useContext(SessionContext);
     const isFocused = useIsFocused();
     const [selectedProjectKey, setSelectedProjectKey] = useState(null);
+    const animationRefs = useRef({});
+
 
 
     const loadProjects = async () => {
@@ -45,7 +49,6 @@ export default function ProjectSelectionScreen() {
         parsed.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
 
         setProjects(parsed);
-        console.log(parsed);
     };
 
     useEffect(() => {
@@ -90,8 +93,23 @@ export default function ProjectSelectionScreen() {
     const renderItem = ({ item }) => {
         const isSelected = selectedProjectKey === item.data_storage_key;
 
+        if (!animationRefs.current[item.data_storage_key]) {
+            animationRefs.current[item.data_storage_key] = new Animated.Value(0);
+        }
+
         return (
-            <View style={styles.cardWrapper}>
+            <Animated.View
+                style={[
+                    styles.cardWrapper,
+                    {
+                        transform: [
+                            {
+                                translateX: animationRefs.current[item.data_storage_key],
+                            },
+                        ],
+                    },
+                ]}
+            >
                 <TouchableOpacity
                     style={styles.menuItem}
                     onPress={() => selectProject(item)}
@@ -99,7 +117,6 @@ export default function ProjectSelectionScreen() {
                         setSelectedProjectKey(item.data_storage_key);
                         setTimeout(() => setSelectedProjectKey(null), 5000);
                     }}
-
                 >
                     <Ionicons name={item.logo} size={28} color="#1e88e5" style={styles.icon} />
                     <View style={{ flex: 1 }}>
@@ -116,7 +133,6 @@ export default function ProjectSelectionScreen() {
                                 <Ionicons name="download-outline" size={20} color="#4068a1" />
                             </TouchableOpacity>
 
-
                             {item.data_storage_key !== 'appData' && (
                                 <TouchableOpacity
                                     style={styles.actionBtn}
@@ -128,9 +144,10 @@ export default function ProjectSelectionScreen() {
                         </View>
                     )}
                 </TouchableOpacity>
-            </View>
+            </Animated.View>
         );
     };
+
 
 
     const createProject = () => {
@@ -149,16 +166,27 @@ export default function ProjectSelectionScreen() {
                     onPress: () => {
                         authenticate(
                             async () => {
-                                await supprimerProjet(projectKey);
-                                await loadProjects();
+                                Animated.timing(animationRefs.current[projectKey], {
+                                    toValue: 500,
+                                    duration: 300,
+                                    useNativeDriver: true,
+                                }).start(async () => {
+                                    await supprimerProjet(projectKey);
+
+                                    setProjects(prev =>
+                                        prev.filter(p => p.data_storage_key !== projectKey)
+                                    );
+                                });
                             },
-                            'Le projet a été supprimé avec succès.'
+                            ""
                         );
                     }
                 }
             ]
         );
     };
+
+
 
 
 

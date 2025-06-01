@@ -22,7 +22,9 @@ export const authenticate = async (action, successMessage) => {
 
     if (result.success) {
         await action();
-        Alert.alert('Succès', successMessage);
+        if (successMessage.trim() !== "") {
+            Alert.alert('Succès', successMessage);
+        }
     } else {
         Alert.alert('Échec', 'Authentification annulée ou échouée.');
     }

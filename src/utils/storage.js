@@ -49,7 +49,6 @@ export const creerProjet = async (nouveauProjet) => {
 
         if (nomExistant) {
             const err = new Error(`Un projet nommé "${nouveauProjet.nom}" existe déjà.`);
-            console.log(err.message);
             throw err;
         }
 
@@ -79,7 +78,6 @@ export const supprimerProjet = async (dataStorageKeyToRemove) => {
 
         await AsyncStorage.removeItem(dataStorageKeyToRemove);
 
-        console.log(`Projet ${dataStorageKeyToRemove} supprimé avec succès.`);
     } catch (error) {
         console.error(`❌ Erreur lors de la suppression du projet ${dataStorageKeyToRemove}:`, error);
     }

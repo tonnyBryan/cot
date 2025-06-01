@@ -78,8 +78,6 @@ export default function IAScreen() {
                 }))
             ];
 
-            //console.log(formattedMessages);
-
             // const formattedMessages = updatedMessages.map(msg => ({
             //     role: msg.sender === 'user' ? 'user' : 'assistant',
             //     content: msg.text
