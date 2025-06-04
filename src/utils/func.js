@@ -41,14 +41,13 @@ export function convertToNoSQL(data) {
 export function regrouperParFamille(data) {
     const { families, members, payments } = data;
 
-    // Étape 1 : Indexer les membres par leur familleId
     const membresParFamille = {};
+
     members.forEach((membre) => {
         if (!membresParFamille[membre.familyId]) {
             membresParFamille[membre.familyId] = [];
         }
 
-        // Calcul du total des paiements pour ce membre
         const total = payments
             .filter((p) => p.memberId === membre.id)
             .reduce((sum, p) => sum + p.amount, 0);
@@ -59,11 +58,18 @@ export function regrouperParFamille(data) {
         });
     });
 
-    // Étape 2 : Reformer la structure regroupée par famille
-    const famillesTransformees = families.map((famille) => ({
-        nom: famille.name,
-        membres: membresParFamille[famille.id] || []
-    }));
+    return families.map((famille) => {
+        const membres = membresParFamille[famille.id] || [];
 
-    return famillesTransformees;
+        const totalFamille = membres.reduce(
+            (somme, membre) => somme + membre.totalPaiements,
+            0
+        );
+
+        return {
+            nom: famille.name,
+            totalPaiements: totalFamille,
+            membres
+        };
+    });
 }
