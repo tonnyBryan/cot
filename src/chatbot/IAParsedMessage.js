@@ -1,74 +1,89 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Text } from 'react-native';
 
-function splitTextWithLists(text) {
-    const lines = text.split('\n');
-    const blocks = [];
-    let currentText = [];
-    let currentList = null;
+function parseMarkdown(text) {
+    const boldPattern = /\*\*(.+?)\*\*/g;
+    const italicPattern = /\*(.+?)\*/g;
+    const combinedPattern = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
 
-    for (let line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('*')) {
-            if (currentText.length) {
-                blocks.push({ type: 'text', content: currentText.join('\n') });
-                currentText = [];
+    const applyMarkdown = (input) => {
+        const tokens = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = combinedPattern.exec(input)) !== null) {
+            if (match.index > lastIndex) {
+                tokens.push({ type: 'text', content: input.slice(lastIndex, match.index) });
             }
-            if (currentList) blocks.push({ type: 'list', content: currentList });
-            currentList = { title: trimmed.replace(/^\*\s*/, ''), items: [] };
-        } else if (trimmed.startsWith('+') && currentList) {
-            currentList.items.push(trimmed.replace(/^\+\s*/, ''));
-        } else {
-            if (currentList) {
-                blocks.push({ type: 'list', content: currentList });
-                currentList = null;
+
+            if (match[1].startsWith('**')) {
+                tokens.push({ type: 'bold', content: match[2] });
+            } else {
+                tokens.push({ type: 'italic', content: match[3] });
             }
-            currentText.push(trimmed);
+
+            lastIndex = match.index + match[1].length;
         }
-    }
 
-    if (currentList) blocks.push({ type: 'list', content: currentList });
-    if (currentText.length) blocks.push({ type: 'text', content: currentText.join('\n') });
+        if (lastIndex < input.length) {
+            tokens.push({ type: 'text', content: input.slice(lastIndex) });
+        }
 
-    return blocks;
+        return tokens;
+    };
+
+    return text.split('\n').map((line) => {
+        const trimmed = line.trim();
+
+        if (trimmed.startsWith('###')) {
+            return { type: 'heading', content: applyMarkdown(trimmed.replace(/^###\s*/, '')) };
+        } else if (trimmed.startsWith('•')) {
+            return { type: 'bullet', content: applyMarkdown(trimmed.substring(1).trim()) };
+        } else if (trimmed.toLowerCase().startsWith('remarque')) {
+            return { type: 'remark', content: applyMarkdown(trimmed) };
+        } else {
+            return { type: 'text', content: applyMarkdown(trimmed) };
+        }
+    });
 }
 
-
-function IAParsedMessage({ text }) {
-    const blocks = splitTextWithLists(text);
+export default function IAParsedMessage({ text }) {
+    const lines = parseMarkdown(text);
 
     return (
-        <View>
-            {blocks.map((block, index) => {
-                if (block.type === 'text') {
-                    return (
-                        <Text key={index} style={{ fontSize: 15, color: '#333', marginBottom: 6 }}>
-                            {block.content}
-                        </Text>
-                    );
-                } else if (block.type === 'list') {
-                    return (
-                        <View key={index} style={{
-                            backgroundColor: '#f2f2f2',
-                            borderRadius: 10,
-                            padding: 10,
-                            marginBottom: 10
-                        }}>
-                            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 6 }}>
-                                {block.content.title}
-                            </Text>
-                            {block.content.items.map((item, i) => (
-                                <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 }}>
-                                    <Text style={{ marginRight: 6, fontSize: 16 }}>•</Text>
-                                    <Text style={{ fontSize: 15, color: '#333' }}>{item}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    );
+        <>
+            {lines.map((line, index) => {
+                let style = { fontSize: 15, color: '#333', marginBottom: 4 };
+
+                if (line.type === 'remark') {
+                    style = { fontSize: 14, color: '#666', fontStyle: 'italic', marginTop: 8 };
+                } else if (line.type === 'heading') {
+                    style = { fontSize: 17, fontWeight: 'bold', marginTop: 12, marginBottom: 6, color: '#222' };
                 }
+
+                return (
+                    <Text key={index} style={style}>
+                        {line.type === 'bullet' && <Text>• </Text>}
+                        {line.content.map((part, idx) => {
+                            if (part.type === 'bold') {
+                                return (
+                                    <Text key={idx} style={{ fontWeight: 'bold' }}>
+                                        {part.content}
+                                    </Text>
+                                );
+                            } else if (part.type === 'italic') {
+                                return (
+                                    <Text key={idx} style={{ fontStyle: 'italic' }}>
+                                        {part.content}
+                                    </Text>
+                                );
+                            } else {
+                                return <Text key={idx}>{part.content}</Text>;
+                            }
+                        })}
+                    </Text>
+                );
             })}
-        </View>
+        </>
     );
 }
-
-export default IAParsedMessage;

@@ -37,3 +37,33 @@ export function convertToNoSQL(data) {
         }))
     };
 }
+
+export function regrouperParFamille(data) {
+    const { families, members, payments } = data;
+
+    // Étape 1 : Indexer les membres par leur familleId
+    const membresParFamille = {};
+    members.forEach((membre) => {
+        if (!membresParFamille[membre.familyId]) {
+            membresParFamille[membre.familyId] = [];
+        }
+
+        // Calcul du total des paiements pour ce membre
+        const total = payments
+            .filter((p) => p.memberId === membre.id)
+            .reduce((sum, p) => sum + p.amount, 0);
+
+        membresParFamille[membre.familyId].push({
+            nom: membre.name,
+            totalPaiements: total
+        });
+    });
+
+    // Étape 2 : Reformer la structure regroupée par famille
+    const famillesTransformees = families.map((famille) => ({
+        nom: famille.name,
+        membres: membresParFamille[famille.id] || []
+    }));
+
+    return famillesTransformees;
+}

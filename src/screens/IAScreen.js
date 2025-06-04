@@ -17,7 +17,7 @@ import LottieView from 'lottie-react-native';
 import {SessionContext} from "../context/SessionProvider";
 import {loadAppData} from "../utils/storage";
 import IAParsedMessage from '../chatbot/IAParsedMessage';
-import {convertToNoSQL} from "../utils/func";
+import {convertToNoSQL, regrouperParFamille} from "../utils/func";
 import IASidebarHelp from '../components/IASidebarHelp';
 
 
@@ -67,8 +67,10 @@ export default function IAScreen() {
 
             const systemMessage = {
                 role: 'system',
-                content: getSystemMessage(IAContext, currentProject, convertToNoSQL(appData))
+                content: getSystemMessage(IAContext, currentProject, regrouperParFamille(appData))
             };
+
+            console.log(JSON.stringify(systemMessage));
 
             const formattedMessages = [
                 systemMessage,
@@ -90,13 +92,17 @@ export default function IAScreen() {
                     'Authorization': `Bearer ${IAContext.api_token}`
                 },
                 body: JSON.stringify({
-                    model: "llama3-8b-8192",
-                    temperature: 0.3,
-                    max_tokens: 500,
-                    top_p: 1,
-                    stream: false,
+                    model: "deepseek/deepseek-r1:free",
                     messages: formattedMessages
                 })
+                // body: JSON.stringify({
+                //     model: "llama3-8b-8192",
+                //     temperature: 0.3,
+                //     max_tokens: 500,
+                //     top_p: 1,
+                //     stream: false,
+                //     messages: formattedMessages
+                // })
             });
 
             if (!response.ok) {
@@ -104,7 +110,9 @@ export default function IAScreen() {
             }
 
             const data = await response.json();
-            const botReply = data.choices?.[0]?.message?.content?.trim() || "Réponse vide.";
+
+            const message = data.choices?.[0]?.message;
+            const botReply = message?.content?.trim() || message?.reasoning?.trim() || "Réponse vide.";
 
             const botMessage = { sender: 'bot', text: botReply };
             setMessages(prev => [...prev, botMessage]);
