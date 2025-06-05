@@ -8,6 +8,7 @@ import PaiementScreen from './src/screens/PaiementScreen';
 import { SessionProvider } from './src/context/SessionProvider';
 import ProjectSelectionScreen from "./src/screens/ProjectSelectionScreen";
 import CreateProjectScreen from "./src/screens/CreateProjectScreen";
+import CreditScreen from "./src/screens/CreditScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +41,12 @@ export default function App() {
                             name="PaiementScreen"
                             component={PaiementScreen}
                             options={{ title: 'Paiement' }}
+                        />
+
+                        <Stack.Screen
+                            name="CreditScreen"
+                            component={CreditScreen}
+                            options={{ title: 'Crédits' }}
                         />
                     </Stack.Navigator>
                 </NavigationContainer>

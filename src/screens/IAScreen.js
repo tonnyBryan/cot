@@ -70,8 +70,6 @@ export default function IAScreen() {
                 content: getSystemMessage(IAContext, currentProject, regrouperParFamille(appData))
             };
 
-            console.log(JSON.stringify(systemMessage));
-
             const formattedMessages = [
                 systemMessage,
                 ...updatedMessages.map(msg => ({
@@ -92,7 +90,7 @@ export default function IAScreen() {
                     'Authorization': `Bearer ${IAContext.api_token}`
                 },
                 body: JSON.stringify({
-                    model: "deepseek/deepseek-r1:free",
+                    model: IAContext.ai_model,
                     messages: formattedMessages
                 })
                 // body: JSON.stringify({

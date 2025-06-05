@@ -57,7 +57,8 @@ const IAContext = {
     // api_token: "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"
 
     api_url: "https://openrouter.ai/api/v1/chat/completions",
-    api_token: "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"
+    ai_model: "meta-llama/llama-3.3-8b-instruct:free",
+    api_token: "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"
 
 };
 

@@ -278,6 +278,14 @@ export default function ProjectSelectionScreen() {
                 showsVerticalScrollIndicator={false}
             />
 
+            <TouchableOpacity
+                style={[styles.fab, { bottom: 175, backgroundColor: '#888' }]}
+                onPress={() => navigation.navigate('CreditScreen')}
+            >
+                <Ionicons name="information-circle-outline" size={28} color="#fff" />
+            </TouchableOpacity>
+
+
             <TouchableOpacity style={styles.importFab}  onPress={handleImportProject}>
                 <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
             </TouchableOpacity>
