@@ -19,6 +19,9 @@ import {loadAppData} from "../utils/storage";
 import IAParsedMessage from '../chatbot/IAParsedMessage';
 import {convertToNoSQL, regrouperParFamille} from "../utils/func";
 import IASidebarHelp from '../components/IASidebarHelp';
+import OpenAI from "openai";
+import IAStatic from "../chatbot/IAStatic";
+
 
 
 
@@ -33,22 +36,7 @@ export default function IAScreen() {
     const slideAnim = useRef(new Animated.Value(-Dimensions.get('window').width)).current;
     const currentProject = getSession('currentProject');
 
-
-    const toggleSidebar = () => {
-        const toValue = sidebarVisible ? -Dimensions.get('window').width : 0;
-
-        if (!sidebarVisible) {
-            Keyboard.dismiss();
-        }
-
-        Animated.timing(slideAnim, {
-            toValue,
-            duration: 300,
-            useNativeDriver: false,
-        }).start(() => {
-            setSidebarVisible(!sidebarVisible);
-        });
-    };
+    const client = new OpenAI({ baseURL: IAStatic.api_url, apiKey: IAStatic.api_token });
 
     const handleSend = async () => {
         if (!inputText.trim()) return;
@@ -65,64 +53,54 @@ export default function IAScreen() {
 
             const appData = await loadAppData(currentProject.data_storage_key);
 
-            const systemMessage = {
-                role: 'system',
-                content: getSystemMessage(IAContext, currentProject, regrouperParFamille(appData))
-            };
+            const systemMessage = getSystemMessage(IAContext, currentProject, regrouperParFamille(appData));
 
-            const formattedMessages = [
-                systemMessage,
+            const apiMessages = [
+                { role: "system", content: systemMessage },
                 ...updatedMessages.map(msg => ({
                     role: msg.sender === 'user' ? 'user' : 'assistant',
                     content: msg.text
                 }))
             ];
 
-            // const formattedMessages = updatedMessages.map(msg => ({
-            //     role: msg.sender === 'user' ? 'user' : 'assistant',
-            //     content: msg.text
-            // }));
-
-            const response = await fetch(IAContext.api_url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${IAContext.api_token}`
-                },
-                body: JSON.stringify({
-                    model: IAContext.ai_model,
-                    messages: formattedMessages
-                })
-                // body: JSON.stringify({
-                //     model: "llama3-8b-8192",
-                //     temperature: 0.3,
-                //     max_tokens: 500,
-                //     top_p: 1,
-                //     stream: false,
-                //     messages: formattedMessages
-                // })
+            const response = await client.chat.completions.create({
+                model: IAStatic.ai_model,
+                messages: apiMessages,
+                temperature: 1.0,
+                top_p: 1.0,
+                max_tokens: 1000,
             });
 
-            if (!response.ok) {
-                throw new Error(`Erreur API: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            const message = data.choices?.[0]?.message;
-            const botReply = message?.content?.trim() || message?.reasoning?.trim() || "Réponse vide.";
+            const botReply = response.choices[0].message.content.trim();
 
             const botMessage = { sender: 'bot', text: botReply };
             setMessages(prev => [...prev, botMessage]);
-            setIsTyping(false);
+
         } catch (error) {
             console.error("Erreur API :", error);
             setMessages(prev => [
                 ...prev,
                 { sender: 'bot', text: "❌ Une erreur est survenue lors de l'appel à l'IA." }
             ]);
+        } finally {
             setIsTyping(false);
         }
+    };
+
+    const toggleSidebar = () => {
+        const toValue = sidebarVisible ? -Dimensions.get('window').width : 0;
+
+        if (!sidebarVisible) {
+            Keyboard.dismiss();
+        }
+
+        Animated.timing(slideAnim, {
+            toValue,
+            duration: 300,
+            useNativeDriver: false,
+        }).start(() => {
+            setSidebarVisible(!sidebarVisible);
+        });
     };
 
 
@@ -196,14 +174,6 @@ export default function IAScreen() {
                                     {msg.sender === 'user' ? 'Vous 🧑' : `🤖 ${IAContext.aiName}`}
                                 </Text>
 
-                                {/*
-                                <Text style={[
-                                    styles.messageText,
-                                    msg.sender === 'user' && { color: '#fff' }
-                                ]}>
-                                    {msg.text}
-                                </Text>
-                                */}
 
                                 {msg.sender === 'bot' ? (
                                     <IAParsedMessage text={msg.text} />
