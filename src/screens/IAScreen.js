@@ -22,10 +22,6 @@ import IASidebarHelp from '../components/IASidebarHelp';
 import OpenAI from "openai";
 import IAStatic from "../chatbot/IAStatic";
 
-
-
-
-
 export default function IAScreen() {
     const [inputText, setInputText] = useState('');
     const [messages, setMessages] = useState([]);
